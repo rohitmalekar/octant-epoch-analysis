@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 import numpy as np
+import plotly.graph_objects as go
 
 # Set page title
 st.title('Octant Grant Analytics - DRAFT')
@@ -10,7 +11,11 @@ st.subheader('Powered by OSO')
 # Read CSV files from data folder
 try:
     monthly_events_df = pd.read_csv('./data/monthly_events_by_project.csv')
+    monthly_active_devs_df = pd.read_csv('./data/monthly_active_devs_by_project.csv')
     proj_collections_df = pd.read_csv('./data/octant_all_collections.csv')
+    # Read and concatenate epoch CSV files
+    epoch_files = ['./data/epoch_2.csv', './data/epoch_3.csv', './data/epoch_4.csv', './data/epoch_5.csv']
+    epoch_dfs = [pd.read_csv(file) for file in epoch_files]
 except FileNotFoundError as e:
     raise Exception(f"Failed to load CSV files from data folder: {e}")
 except pd.errors.EmptyDataError:
@@ -18,56 +23,91 @@ except pd.errors.EmptyDataError:
 except Exception as e:
     raise Exception(f"Error reading CSV files: {e}")
 
-st.markdown('Over 5 Epochs, Octant has fundded $X to Y projects. The following analytics showcases Z of these projects that have open source contributions. In 2024, these projects have contributed to:')
+# Define a mapping of collection names to their corresponding months
+epoch_mapping = {
+    'octant-02': [1, 2, 3],
+    'octant-03': [4, 5, 6],
+    'octant-04': [7, 8, 9],
+    'octant-05': [10, 11, 12]
+}
+
+# Define the start month for each epoch
+epoch_start_months = {
+    'octant-02': 1,  # January
+    'octant-03': 4,  # April
+    'octant-04': 7,  # July
+    'octant-05': 10  # October
+}
+
 
 # Convert month column to datetime for easier filtering
 monthly_events_df['bucket_month'] = pd.to_datetime(monthly_events_df['bucket_month'])
 
+# Aggregate the data by project_id, event_type, and bucket_month
 monthly_events_df = monthly_events_df.groupby(['project_id', 'event_type', 'bucket_month']).agg({
     'amount': 'sum'
 }).reset_index()
 
-# Calculate total COMMIT_CODE amount for 2024
-commit_code_2024 = monthly_events_df[
-    (monthly_events_df['event_type'] == 'COMMIT_CODE') & 
-    (monthly_events_df['bucket_month'].dt.year == 2024)
-]['amount'].sum()
+# Convert month column to datetime for easier filtering
+monthly_active_devs_df['bucket_month'] = pd.to_datetime(monthly_active_devs_df['bucket_month'])
 
-# Calculate total PULL_REQUEST_CLOSED amount for 2024
-pull_request_closed_2024 = monthly_events_df[
-    (monthly_events_df['event_type'] == 'PULL_REQUEST_CLOSED') & 
-    (monthly_events_df['bucket_month'].dt.year == 2024)
-]['amount'].sum()
+# Aggregate the data by project_id, event_type, and bucket_month
+monthly_active_devs_df = monthly_active_devs_df.groupby(['project_id', 'user_segment_type', 'bucket_month']).agg({
+    'amount': 'sum'
+}).reset_index()
 
-# Calculate total ISSUE_CLOSED amount for 2024
-issue_closed_2024 = monthly_events_df[
-    (monthly_events_df['event_type'] == 'ISSUE_CLOSED') & 
-    (monthly_events_df['bucket_month'].dt.year == 2024)
-]['amount'].sum()
+# Read and concatenate epoch CSV files for funding
+epoch_funding = pd.concat(epoch_dfs, ignore_index=True)
 
-# Display metrics using Streamlit in three columns
-col1, col2, col3 = st.columns(3)
+# Group by 'to_project_name' and 'grant_pool_name' and sum 'amount'
+epoch_funding = epoch_funding.groupby(['to_project_name', 'grant_pool_name']).agg({'amount': 'sum'}).reset_index()
 
-with col1:
-    st.metric(
-        label="Total Commits",
-        value=int(commit_code_2024),
-        border=True
-    )
 
-with col2:
-    st.metric(
-        label="Total Pull Requests Closed",
-        value=int(pull_request_closed_2024),
-        border=True
-    )
+summary_container = st.container(border=True)
+summary_container.markdown('Over 5 Epochs, Octant has fundded $X to Y projects. The following analytics showcases Z of these projects that have open source contributions. In 2024, these projects have contributed to:')
 
-with col3:
-    st.metric(
-        label="Total Issues Closed",
-        value=int(issue_closed_2024),
-        border=True
-    )
+with summary_container:
+    # Calculate total COMMIT_CODE amount for 2024
+    commit_code_2024 = monthly_events_df[
+        (monthly_events_df['event_type'] == 'COMMIT_CODE') & 
+        (monthly_events_df['bucket_month'].dt.year == 2024)
+    ]['amount'].sum()
+
+    # Calculate total PULL_REQUEST_CLOSED amount for 2024
+    pull_request_merged_2024 = monthly_events_df[
+        (monthly_events_df['event_type'] == 'PULL_REQUEST_MERGED') & 
+        (monthly_events_df['bucket_month'].dt.year == 2024)
+    ]['amount'].sum()
+
+    # Calculate total ISSUE_CLOSED amount for 2024
+    issue_closed_2024 = monthly_events_df[
+        (monthly_events_df['event_type'] == 'ISSUE_CLOSED') & 
+        (monthly_events_df['bucket_month'].dt.year == 2024)
+    ]['amount'].sum()
+
+    # Display metrics using Streamlit in three columns
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.metric(
+            label="Total Commits",
+            value=int(commit_code_2024),
+            border=True
+        )
+
+    with col2:
+        st.metric(
+            label="Total Pull Requests Merged",
+            value=int(pull_request_merged_2024),
+            border=True
+        )
+
+    with col3:
+        st.metric(
+            label="Total Issues Closed",
+            value=int(issue_closed_2024),
+            border=True
+        )
 
 # Create tabs for different sections of the analysis
 tab1, tab2, tab3, tab4 = st.tabs(["Analysis by Epoch", "Top Projects by Epoch", "Project Trends", "Strategic Findings"])
@@ -93,17 +133,10 @@ with tab1:
 
             This analysis helps you understand trends, spotlight standout projects, and gauge how activity evolves over time.
             """)
-
-    # Define a mapping of collection names to their corresponding months
-    epoch_mapping = {
-        'octant-02': [1, 2, 3],
-        'octant-03': [4, 5, 6],
-        'octant-04': [7, 8, 9],
-        'octant-05': [10, 11, 12]
-    }
-
-    # Initialize an empty list to store DataFrames for each epoch
-    epoch_dataframes = []
+        
+    # Initialize an empty list to store DataFrames 
+    epoch_dataframes = [] # Code metrics based on project participation in funding epochs
+    epoch_dataframes_all = [] # Code metrics based on project participation in all epochs
 
     # Iterate over each collection name and its corresponding months
     for collection_name, months in epoch_mapping.items():
@@ -141,7 +174,7 @@ with tab1:
     # Add a selectbox for event type selection with 'COMMIT_CODE' as the default
     event_type = st.radio(
         'Select Event Type',
-        ['COMMIT_CODE', 'PULL_REQUEST_CLOSED', 'ISSUE_CLOSED'],
+        ['COMMIT_CODE', 'PULL_REQUEST_MERGED', 'ISSUE_CLOSED'],
         index=0  # Set the default index to 0 for 'COMMIT_CODE'
     )
 
@@ -160,6 +193,8 @@ with tab1:
         hover_data=['project_name']  # Add project name to hover data
     )
 
+    fig.update_layout(height=600) 
+
     # Display the plot in Streamlit
     st.plotly_chart(fig)
 
@@ -168,8 +203,8 @@ with tab2:
     # Allow user to select up to three metrics
     selected_metrics = st.multiselect(
         'Select up to three metrics',
-        ['COMMIT_CODE', 'PULL_REQUEST_CLOSED', 'ISSUE_CLOSED', 'FORKED', 'STARRED'],
-        default=['COMMIT_CODE', 'PULL_REQUEST_CLOSED']
+        ['COMMIT_CODE', 'PULL_REQUEST_MERGED', 'ISSUE_CLOSED', 'FORKED', 'STARRED'],
+        default=['COMMIT_CODE', 'PULL_REQUEST_MERGED']
     )
 
     # Initialize a dictionary to store weights
@@ -303,83 +338,232 @@ with tab2:
 
 with tab3:
 
-    # Define the start month for each epoch
-    epoch_start_months = {
-        'octant-02': 1,  # January
-        'octant-03': 4,  # April
-        'octant-04': 7,  # July
-        'octant-05': 10  # October
-    }
+    # Get project IDs for filtering
+    project_ids = proj_collections_df['project_id'].unique()
+        
+    # Get code metrics for each project irrespective of they being part of a funding epoch
+    for collection_name, months in epoch_mapping.items():
+        
+        # Filter and aggregate metrics for the current epoch
+        epoch_data = monthly_events_df[
+            (monthly_events_df['project_id'].isin(project_ids)) &
+            (monthly_events_df['bucket_month'].dt.year == 2024) &
+            (monthly_events_df['bucket_month'].dt.month.isin(months))
+        ].groupby(['project_id', 'event_type']).agg({
+            'amount': 'sum'
+        }).reset_index()
+        
+        # Add the epoch column
+        epoch_data['epoch'] = collection_name
+        
+        # Merge to include project_name
+        epoch_data = epoch_data.merge(
+            proj_collections_df[['project_id', 'project_name']],
+            on='project_id',
+            how='left'
+        )
+        
+        # Append the DataFrame to the list
+        epoch_dataframes.append(epoch_data)
 
-    # Create two columns
-    col1, col2 = st.columns(2)
+    all_project_data = pd.concat(epoch_dataframes, ignore_index=True)
 
-    # Add selectbox for epoch selection in the first column
-    with col1:
-        epoch = st.selectbox(
-            'Select Epoch',
-            ['octant-02', 'octant-03', 'octant-04', 'octant-05'],
-            index=0  # Default to 'octant-02'
+    # Create the pivot table with filtered data in one step
+    pivot_code_metrics_table = all_project_data[
+        all_project_data['event_type'].isin(['FORKED', 'STARRED', 'COMMIT_CODE', 'ISSUE_CLOSED', 'PULL_REQUEST_MERGED'])
+    ].pivot_table(
+        index=['project_name', 'event_type'],
+        columns='epoch',
+        values='amount',
+        aggfunc='sum',  # Use sum to aggregate values if there are duplicates
+        fill_value=0    # Fill missing values with 0
+    ).reset_index()
+
+    # Add a trend column using LineChartColumn
+    pivot_code_metrics_table['trend'] = pivot_code_metrics_table.apply(
+        lambda row: [row['octant-02'], row['octant-03'], row['octant-04'], row['octant-05']],
+        axis=1
+    )
+    
+    # Rename columns
+    pivot_code_metrics_table = pivot_code_metrics_table.rename(columns={
+        'octant-02': 'Jan - Mar',
+        'octant-03': 'Apr - Jun',
+        'octant-04': 'Jul - Sep',
+        'octant-05': 'Oct - Dec'
+    })
+
+
+    pivot_funding_table = epoch_funding.pivot_table(
+        index=['to_project_name'],
+        columns='grant_pool_name',
+        values='amount',
+        aggfunc='sum',
+        fill_value=0
+    ).reset_index()
+
+    pivot_funding_table['trend'] = pivot_funding_table.apply(
+        lambda row: [row['epoch_2'], row['epoch_3'], row['epoch_4'], row['epoch_5']],
+        axis=1
+    )
+
+    # Rename columns
+    pivot_funding_table = pivot_funding_table.rename(columns={
+        'epoch_2': 'octant-02',
+        'epoch_3': 'octant-03',
+        'epoch_4': 'octant-04',
+        'epoch_5': 'octant-05'
+    })
+
+
+    # Format values with rounded numbers and dollar sign
+    for col in ['octant-02', 'octant-03', 'octant-04', 'octant-05']:
+        pivot_funding_table[col] = pivot_funding_table[col].apply(lambda x: f"${x:,.0f}")
+
+
+    # Extract unique project names from all_epoch_data
+    project_names = all_epoch_data['project_name'].unique()
+
+    # Add a search box with auto-suggest for project names
+    selected_project = st.selectbox(
+        'Search for a project',
+        options=project_names,
+        format_func=lambda x: x if x else "Select a project"
+    )
+
+    # Display selected project details or perform actions based on selection
+    if selected_project:
+        
+        # Add any additional logic to display project-specific data
+
+        # Filter the pivot table for the selected project
+        filtered_code_metrics_table = pivot_code_metrics_table[pivot_code_metrics_table['project_name'] == selected_project]
+        # Drop project name column
+        filtered_code_metrics_table = filtered_code_metrics_table.drop(columns=['project_name'])
+
+        filtered_funding_table = pivot_funding_table[pivot_funding_table['to_project_name'] == selected_project]
+
+        st.dataframe(
+            filtered_funding_table,
+            column_config={
+                'trend': st.column_config.BarChartColumn(
+                    label='Trend',
+                    width=150,
+                    y_min = 0
+                )
+            },
+            use_container_width=True,
+            hide_index=True
         )
 
-    # Add selectbox for event type selection in the second column
-    with col2:
-        event_type = st.selectbox(
-            'Select Event Type',
-            ['COMMIT_CODE', 'PULL_REQUEST_CLOSED', 'ISSUE_CLOSED'],
-            index=0  # Default to 'COMMIT_CODE'
+        # Display the pivot table with the trend column
+        st.dataframe(
+            filtered_code_metrics_table,
+            column_config={
+
+                'trend': st.column_config.LineChartColumn(
+                    label='Trend',
+                    width=150,
+                    y_min = 0
+                )
+            },
+            use_container_width=True,
+            hide_index=True
         )
-
-    # Filter the data for the selected epoch and event type
-    filtered_data = monthly_events_df[
-        (monthly_events_df['project_id'].isin(proj_collections_df[proj_collections_df['collection_name'] == epoch]['project_id'])) &
-        (monthly_events_df['event_type'] == event_type) &
-        (monthly_events_df['bucket_month'].dt.year == 2024) &  # Ensure the year is 2024
-        (monthly_events_df['bucket_month'].dt.month >= epoch_start_months[epoch])
-    ]
-
-
-    # Ensure unique project_id and project_name pairs
-    unique_projects = proj_collections_df[['project_id', 'project_name']].drop_duplicates()
-
-    # Merge project names into the filtered data
-    filtered_data = filtered_data.merge(
-        unique_projects,
-        on='project_id',
-        how='left'
-    )
-
-    # Sort data by project and month
-    filtered_data= filtered_data.sort_values(by=['project_name', 'bucket_month'])
-
-    # Calculate cumulative sum for each project
-    filtered_data['cumulative_amount'] = filtered_data.groupby('project_name')['amount'].cumsum()
-
-    # Create a line chart for cumulative metrics with smooth curves
-    fig_cumulative = px.line(
-        filtered_data,
-        x='bucket_month',
-        y='cumulative_amount',
-        color='project_name',
-        title='Cumulative Metrics Over Time',
-        labels={'cumulative_amount': 'Cumulative Total'},
-        markers=True,
-        line_shape='spline'
-    )
-
-    # Update layout to move legend to the bottom
-    fig_cumulative.update_layout(
-         showlegend=False, 
-        height=800
-    )
-
-    # Display the cumulative line chart in Streamlit
-    st.plotly_chart(fig_cumulative)
 
 with tab4:
-    st.header("Strategic Findings")
-    # Add your strategic findings analysis code here
-    # ...
 
+    st.markdown("#### Clustering Insights for Tailored Capital Allocation in Octant V2")
 
+    # Contextual Introduction
+    with st.expander("📜 **Introduction**", expanded=True):
+        st.markdown("""
+        The [Octant V2 framework](https://octantapp.notion.site/Degens-Dragons-Octant-V2-Overview-full-version-0-4-127e165689aa8022bb01dfc76e3cca4d) envisions a dynamic and decentralized approach to deploy capital and efficiently stream value to impactful initiatives within a project's ecosystem. This is achieved by leveraging community-driven decision-making and transparent onchain mechanisms.
 
+        In any large ecosystem, different projects require varying types of support depending on their maturity, popularity, and level of community engagement. Octant addresses these diverse needs while maximizing impact by embracing a **plurality of allocation strategies**.
+
+        > *By categorizing projects into distinct clusters—ranging from emerging initiatives to high-traffic hubs and star performers—Octant can tailor allocation strategies to match the unique needs and potential of each group.*
+
+        These clusters provide the foundation for understanding the underlying characteristics of funded projects and inform data-driven allocation strategies.
+        """)
+
+    # Methodology Section
+    st.markdown("##### Methodology")
+    st.image("./images/all_clusters.png", caption="Visualization of Clustering Results")
+
+    st.markdown("""
+    The clustering methodology uses various features such as star counts, forks, developer contributions, and activity over time to group projects into meaningful categories. Below is a summary of these clusters and their corresponding mean values across key metrics.
+    """)
+
+    # Load and display the transformed cluster summary
+    try:
+        cluster_summary_df = pd.read_csv('./data/cluster_summary.csv')
+    except FileNotFoundError as e:
+        st.error(f"Failed to load cluster_summary.csv: {e}")
+        st.stop()
+    except pd.errors.EmptyDataError:
+        st.error("cluster_summary.csv is empty")
+        st.stop()
+
+    cluster_summary_df = cluster_summary_df.round(0)
+    transformed_cluster_summary_df = cluster_summary_df.set_index("cluster").T
+    if 'first_commit_date' in transformed_cluster_summary_df.index:
+        transformed_cluster_summary_df.loc['first_commit_date'] = pd.to_datetime(
+            transformed_cluster_summary_df.loc['first_commit_date']
+        ).dt.year.astype(str)
+    for index in transformed_cluster_summary_df.index:
+        if index != 'first_commit_date':
+            transformed_cluster_summary_df.loc[index] = transformed_cluster_summary_df.loc[index].astype(int)
+
+    st.dataframe(
+        transformed_cluster_summary_df,
+        column_order=['0', '4', '1', '2', '3'],
+        column_config={
+            '0': st.column_config.Column(label='Emerging Projects', width=150),
+            '1': st.column_config.Column(label='Established Community Projects', width=150),
+            '2': st.column_config.Column(label='High-Traffic Collaborative Hubs', width=150),
+            '3': st.column_config.Column(label='Star Performers', width=150),
+            '4': st.column_config.Column(label='Specialized Focused Projects', width=150)
+        }
+    )
+
+    # Cluster Descriptions
+    st.markdown("##### Cluster Descriptions")
+    
+    st.image("./images/emerging.png", caption="Emerging and Specialized Projects")
+    st.markdown("###### Emerging Projects")
+    st.markdown("""
+    - Moderate star and fork counts with relatively few developers.
+    - Active contributors over the past 6 months, indicating recent interest.
+    - Lower overall activity compared to other clusters, suggesting a project in its growth phase.
+    """)
+
+    st.markdown("###### Specialized Focused Projects")
+    st.markdown("""
+    - Moderate star and fork counts with a small but dedicated developer and contributor base.
+    - High commit and pull request activity relative to the team size, indicating intense work by a focused team.
+    - Likely niche or highly specialized projects driven by committed contributors.
+    """)
+  
+    st.image("./images/established.png", caption="Established, High-Traffic, and Star Performers")
+    st.markdown("###### Established Community Projects")
+    st.markdown("""
+    - High star and fork counts with a strong contributor base.
+    - Moderate recent developer activity, suggesting steady ongoing engagement.
+    - Likely long-standing projects with consistent user interest and moderate growth.
+    """)
+
+    st.markdown("###### High-Traffic Collaborative Hubs")
+    st.markdown("""
+    - Very high contributor and developer counts, along with significant star and fork counts.
+    - High activity in the past 6 months, including commits, pull requests, and issue resolution.
+    - Indicates large, vibrant ecosystems with extensive collaboration and active community management.
+    """)
+
+    st.markdown("###### Star Performers")
+    st.markdown("""
+    - Exceptionally high star and fork counts, indicative of widespread popularity.
+    - Moderate developer and contributor counts, with steady recent activity.
+    - Likely mature, high-visibility projects with a stable but less dynamic contributor base.
+    """)
+    
