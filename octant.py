@@ -64,7 +64,7 @@ epoch_funding = epoch_funding.groupby(['to_project_name', 'grant_pool_name']).ag
 
 
 summary_container = st.container(border=True)
-summary_container.markdown('Over 5 Epochs, Octant has fundded $X to Y projects. The following analytics showcases Z of these projects that have open source contributions. In 2024, these projects have contributed to:')
+summary_container.markdown('Over 6 Epochs starting Epoch Zero, Octant has funded approximately $5 million to 62 projects. The following analytics showcases 47 of these projects that have open source contributions. In 2024, these projects have contributed to:')
 
 with summary_container:
     # Calculate total COMMIT_CODE amount for 2024
