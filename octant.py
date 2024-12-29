@@ -13,6 +13,7 @@ try:
     monthly_events_df = pd.read_csv('./data/monthly_events_by_project.csv')
     monthly_active_devs_df = pd.read_csv('./data/monthly_active_devs_by_project.csv')
     proj_collections_df = pd.read_csv('./data/octant_all_collections.csv')
+    dev_count_by_epoch_df = pd.read_csv('./data/dev_count_by_epoch.csv')
     # Read and concatenate epoch CSV files
     epoch_files = ['./data/epoch_2.csv', './data/epoch_3.csv', './data/epoch_4.csv', './data/epoch_5.csv']
     epoch_dfs = [pd.read_csv(file) for file in epoch_files]
@@ -24,11 +25,19 @@ except Exception as e:
     raise Exception(f"Error reading CSV files: {e}")
 
 # Define a mapping of collection names to their corresponding months
-epoch_mapping = {
+month_to_epoch_mapping = {
     'octant-02': [1, 2, 3],
     'octant-03': [4, 5, 6],
     'octant-04': [7, 8, 9],
     'octant-05': [10, 11, 12]
+}
+
+# Define the mapping from quarter to epoch
+quarter_to_epoch_mapping = {
+    1: 'octant-02',
+    2: 'octant-03',
+    3: 'octant-04',
+    4: 'octant-05'
 }
 
 # Define the start month for each epoch
@@ -39,6 +48,8 @@ epoch_start_months = {
     'octant-05': 10  # October
 }
 
+# Add a new column 'epoch' to the DataFrame using the mapping
+dev_count_by_epoch_df['epoch'] = dev_count_by_epoch_df['quarter'].map(quarter_to_epoch_mapping)
 
 # Convert month column to datetime for easier filtering
 monthly_events_df['bucket_month'] = pd.to_datetime(monthly_events_df['bucket_month'])
@@ -62,84 +73,75 @@ epoch_funding = pd.concat(epoch_dfs, ignore_index=True)
 # Group by 'to_project_name' and 'grant_pool_name' and sum 'amount'
 epoch_funding = epoch_funding.groupby(['to_project_name', 'grant_pool_name']).agg({'amount': 'sum'}).reset_index()
 
+# Map grant_pool_name values
+epoch_funding['grant_pool_name'] = epoch_funding['grant_pool_name'].replace({
+    'epoch_2': 'octant-02',
+    'epoch_3': 'octant-03',
+    'epoch_4': 'octant-04',
+    'epoch_5': 'octant-05'
+})
 
-summary_container = st.container(border=True)
-summary_container.markdown('Over 6 Epochs starting Epoch Zero, Octant has funded approximately $5 million to 62 projects. The following analytics showcases 47 of these projects that have open source contributions. In 2024, these projects have contributed to:')
+summary_container = st.container()
+summary_container.markdown('Over 6 Epochs starting Epoch Zero, Octant has funded approximately $5 million to 62 projects. The following analytics showcases 47 of these projects that have open source contributions.')
 
-with summary_container:
-    # Calculate total COMMIT_CODE amount for 2024
-    commit_code_2024 = monthly_events_df[
-        (monthly_events_df['event_type'] == 'COMMIT_CODE') & 
-        (monthly_events_df['bucket_month'].dt.year == 2024)
-    ]['amount'].sum()
 
-    # Calculate total PULL_REQUEST_CLOSED amount for 2024
-    pull_request_merged_2024 = monthly_events_df[
-        (monthly_events_df['event_type'] == 'PULL_REQUEST_MERGED') & 
-        (monthly_events_df['bucket_month'].dt.year == 2024)
-    ]['amount'].sum()
+#with summary_container:
+#    # Calculate total COMMIT_CODE amount for 2024
+#    commit_code_2024 = monthly_events_df[
+#        (monthly_events_df['event_type'] == 'COMMIT_CODE') & 
+#        (monthly_events_df['bucket_month'].dt.year == 2024)
+#    ]['amount'].sum()
 
-    # Calculate total ISSUE_CLOSED amount for 2024
-    issue_closed_2024 = monthly_events_df[
-        (monthly_events_df['event_type'] == 'ISSUE_CLOSED') & 
-        (monthly_events_df['bucket_month'].dt.year == 2024)
-    ]['amount'].sum()
+#    # Calculate total PULL_REQUEST_CLOSED amount for 2024
+#    pull_request_merged_2024 = monthly_events_df[
+#        (monthly_events_df['event_type'] == 'PULL_REQUEST_MERGED') & 
+#        (monthly_events_df['bucket_month'].dt.year == 2024)
+#    ]['amount'].sum()
 
-    # Display metrics using Streamlit in three columns
-    col1, col2, col3 = st.columns(3)
+#    # Calculate total ISSUE_CLOSED amount for 2024
+#    issue_closed_2024 = monthly_events_df[
+#        (monthly_events_df['event_type'] == 'ISSUE_CLOSED') & 
+#        (monthly_events_df['bucket_month'].dt.year == 2024)
+#    ]['amount'].sum()
 
-    with col1:
-        st.metric(
-            label="Total Commits",
-            value=int(commit_code_2024),
-            border=True
-        )
+#    # Display metrics using Streamlit in three columns
+#    col1, col2, col3 = st.columns(3)
 
-    with col2:
-        st.metric(
-            label="Total Pull Requests Merged",
-            value=int(pull_request_merged_2024),
-            border=True
-        )
+#    with col1:
+#        st.metric(
+#            label="Total Commits",
+#            value=int(commit_code_2024),
+#            border=True
+#        )
 
-    with col3:
-        st.metric(
-            label="Total Issues Closed",
-            value=int(issue_closed_2024),
-            border=True
-        )
+#    with col2:
+#        st.metric(
+#            label="Total Pull Requests Merged",
+#            value=int(pull_request_merged_2024),
+#            border=True
+#        )
+
+#    with col3:
+#        st.metric(
+#            label="Total Issues Closed",
+#            value=int(issue_closed_2024),
+#            border=True
+#        )
+
 
 # Create tabs for different sections of the analysis
-tab1, tab2, tab3, tab4 = st.tabs(["Analysis by Epoch", "Top Projects by Epoch", "Project Trends", "Strategic Findings"])
+tab1, tab2, tab3, tab4 = st.tabs(["Analysis across Epochs", "Top Projects by Epoch", "Project Trends", "Strategic Findings"])
 
 with tab1:
-    st.markdown("#### Event Metrics Across Epochs")
-    with st.expander("How to Interpret the Box Plot?"):
-        st.markdown("""
-            This box plot provides a visual summary of project activity for the selected event type (e.g., **COMMIT_CODE**, **PULL_REQUEST_CLOSED**, or **ISSUE_CLOSED**) across different epochs. Here's how to interpret it:
+    st.markdown("#### Analyzing Developer Productivity and Funding Distribution Across Epochs")
+    st.markdown("Explore how project productivity, measured as event contributions per active developer, correlates with funding received across various epochs. This interactive scatter plot highlights differences in developer team sizes and their impact on funding efficiency.")
 
-            - Each box represents the **range of activity levels** for projects within a specific epoch.
-            - The **line inside the box** is the **median** (middle value).
-            - The **ends of the box** are the **first quartile (25th percentile)** and **third quartile (75th percentile)**.
-            - Points **outside the whiskers** indicate **outliers**—projects with unusually high or low activity compared to others.
-
-            ---
-
-            ##### What Can You Learn from This?
-
-            - **Compare activity levels across epochs**: See which epochs had higher or lower overall activity for the selected event type.
-            - **Identify outliers**: Hover over individual points to discover projects with extraordinary contributions, helping pinpoint leaders or anomalies in the ecosystem.
-            - **Assess variability**: The size of the box and whiskers shows how spread out the activity levels are within an epoch.
-
-            This analysis helps you understand trends, spotlight standout projects, and gauge how activity evolves over time.
-            """)
-        
     # Initialize an empty list to store DataFrames 
     epoch_dataframes = [] # Code metrics based on project participation in funding epochs
     epoch_dataframes_all = [] # Code metrics based on project participation in all epochs
 
     # Iterate over each collection name and its corresponding months
-    for collection_name, months in epoch_mapping.items():
+    for collection_name, months in month_to_epoch_mapping.items():
         # Filter projects for the current collection
         projects = proj_collections_df[proj_collections_df['collection_name'] == collection_name]
         
@@ -180,25 +182,77 @@ with tab1:
 
     # Filter the data based on the selected event type
     selected_event_data = all_epoch_data[all_epoch_data['event_type'] == event_type]
+    
+    # Merge with dev_count_by_epoch_df to get active_dev_count
+    selected_event_data = selected_event_data.merge(
+        dev_count_by_epoch_df[['project_id', 'epoch', 'active_dev_count']],
+        on=['project_id', 'epoch'],
+        how='left'
+    )
+    
+    # Calculate amount_per_dev
+    selected_event_data['amount_per_dev'] = selected_event_data['amount'] / selected_event_data['active_dev_count']
 
-    # Create a box plot with the selected event type
-    fig = px.box(
-        selected_event_data,
-        x='epoch',
-        y='amount',
-        points='all',
-        title=f'Box Plot of {event_type}',
-        labels={'amount': 'Total'},
-        log_y=True,  # Set y-axis to logarithmic scale
-        hover_data=['project_name']  # Add project name to hover data
+    # Define bins and labels for project size
+    bins = [0, 2, 10, 20, 50, float('inf')]
+    labels = ['Solo Projects (1-2 devs)', 'Small Teams (3-10 devs)', 'Medium Teams (11-20 devs)', 'Large Teams (21-50 devs)', 'Very Large Teams ( > 50 devs)']
+    
+    # Add project_size column
+    selected_event_data['project_size'] = pd.cut(
+        selected_event_data['active_dev_count'],
+        bins=bins,
+        labels=labels,
+        right=True
     )
 
-    fig.update_layout(height=600) 
+    # Merge selected_event_data with epoch_funding on project_name and epoch
+    selected_event_data = selected_event_data.merge(
+        epoch_funding,
+        left_on=['project_name', 'epoch'],
+        right_on=['to_project_name', 'grant_pool_name'],
+        how='left'
+    )
+
+    selected_event_data.rename(columns={'amount_x': 'metric_amount'}, inplace=True)
+    selected_event_data.rename(columns={'amount_y': 'funding_amount'}, inplace=True)
+
+    # Drop the redundant columns after merge
+    selected_event_data = selected_event_data.drop(columns=['to_project_name', 'grant_pool_name'])
+
+    # Create a scatter plot with metric_amount on Y axis and funding_amount on X axis
+    fig = px.scatter(
+        selected_event_data,
+        x='funding_amount',
+        y='amount_per_dev',
+        color='project_size',  # Color dots based on project_size
+        color_discrete_sequence=px.colors.qualitative.Bold,  # Use a bright color sequence
+        facet_col='epoch',  # Create facets for each epoch
+        facet_col_wrap=2,   # Arrange facets in 2 columns
+        title=f'Scatter Plot of {event_type} per Active Developer vs Funding Amount',
+        labels={'amount_per_dev': f'{event_type} Per Active Developer', 'funding_amount': 'Funding Amount'},
+        hover_data=['project_name'],  # Add project name to hover data
+        log_x=True,
+        log_y=True  # Set Y-axis to logarithmic scale
+    )
+
+    fig.update_layout(
+        height=800,
+        legend=dict(
+            orientation="h",  # Horizontal orientation
+            yanchor="bottom",
+            y=-0.2,  # Adjust the y position to place it below the plot
+            xanchor="center",
+            x=0.5  # Center the legend horizontally
+        )
+    )
 
     # Display the plot in Streamlit
     st.plotly_chart(fig)
 
 with tab2:
+
+    st.markdown("#### Customized Project Rankings and Epoch-Wise Performance")
+    st.markdown("Assign weights to your selected metrics and explore the top-performing projects across funding epochs. Choose to normalize scores by team size for a balanced comparison or view absolute scores for a broader perspective.")
 
     # Allow user to select up to three metrics
     selected_metrics = st.multiselect(
@@ -223,6 +277,11 @@ with tab2:
     # Calculate total weight
     total_weight = sum(weights.values())
 
+    # Add a toggle for the user to choose normalization method
+    use_active_dev_count = st.checkbox('Normalize with Active Developer Count', value=True)
+    st.caption("Enable Normalization with Active Developer Count to compare project scores relative to team size for a fairer assessment. Disable it to view absolute scores, irrespective of team size.")
+
+
     # Display a button to show rankings if total weight is 100
     if total_weight == 100:
         st.info("Total weight is 100, showing rankings")
@@ -237,22 +296,48 @@ with tab2:
         epoch_project_scores = {}
 
         # Normalize metrics for each epoch
-        for i, epoch in enumerate(epoch_mapping.keys()):
+        for i, epoch in enumerate(month_to_epoch_mapping.keys()):
             epoch_data = all_epoch_data[all_epoch_data['epoch'] == epoch]
+
+            # Merge to include active_dev_count
+            epoch_data = epoch_data.merge(
+                dev_count_by_epoch_df[['project_id', 'epoch', 'active_dev_count']],
+                on=['project_id', 'epoch'],
+                how='left'
+            )
             
-            # Normalize each selected metric
             for metric in selected_metrics:
-                max_value = epoch_data[epoch_data['event_type'] == metric]['amount'].max()
-                if max_value > 0:
-                    epoch_data.loc[epoch_data['event_type'] == metric, 'normalized_amount'] = (
-                        epoch_data['amount'] / max_value
-                    )
+                if use_active_dev_count:
+                    # Calculate the per-developer metric
+                    epoch_data['per_dev_amount'] = epoch_data['amount'] / epoch_data['active_dev_count']
+
+                    # Find the maximum per-developer value for normalization
+                    max_value = epoch_data[epoch_data['event_type'] == metric]['per_dev_amount'].max()
+
+                    # Normalize the per-developer metric
+                    if max_value > 0:
+                        epoch_data.loc[epoch_data['event_type'] == metric, 'normalized_amount'] = (
+                            epoch_data['per_dev_amount'] / max_value
+                        )
+                    else:
+                        epoch_data.loc[epoch_data['event_type'] == metric, 'normalized_amount'] = 0
                 else:
-                    epoch_data.loc[epoch_data['event_type'] == metric, 'normalized_amount'] = 0
+                    # Find the maximum value for normalization without active_dev_count
+                    max_value = epoch_data[epoch_data['event_type'] == metric]['amount'].max()
+
+                    # Normalize the metric without active_dev_count
+                    if max_value > 0:
+                        epoch_data.loc[epoch_data['event_type'] == metric, 'normalized_amount'] = (
+                            epoch_data['amount'] / max_value
+                        )
+                    else:
+                        epoch_data.loc[epoch_data['event_type'] == metric, 'normalized_amount'] = 0
             
-            # Calculate composite score
             epoch_data['composite_score'] = 0
+            
+
             for metric in selected_metrics:
+                # Calculate composite score factoring in normalized active developers
                 epoch_data.loc[epoch_data['event_type'] == metric, 'composite_score'] += (
                     epoch_data['normalized_amount'] * weights[metric] / 100
                 )
@@ -342,7 +427,7 @@ with tab3:
     project_ids = proj_collections_df['project_id'].unique()
         
     # Get code metrics for each project irrespective of they being part of a funding epoch
-    for collection_name, months in epoch_mapping.items():
+    for collection_name, months in month_to_epoch_mapping.items():
         
         # Filter and aggregate metrics for the current epoch
         epoch_data = monthly_events_df[
@@ -403,17 +488,17 @@ with tab3:
     ).reset_index()
 
     pivot_funding_table['trend'] = pivot_funding_table.apply(
-        lambda row: [row['epoch_2'], row['epoch_3'], row['epoch_4'], row['epoch_5']],
+        lambda row: [row['octant-02'], row['octant-03'], row['octant-04'], row['octant-05']],
         axis=1
     )
 
     # Rename columns
-    pivot_funding_table = pivot_funding_table.rename(columns={
-        'epoch_2': 'octant-02',
-        'epoch_3': 'octant-03',
-        'epoch_4': 'octant-04',
-        'epoch_5': 'octant-05'
-    })
+    #pivot_funding_table = pivot_funding_table.rename(columns={
+    #    'epoch_2': 'octant-02',
+    #    'epoch_3': 'octant-03',
+    #    'epoch_4': 'octant-04',
+    #    'epoch_5': 'octant-05'
+    #})
 
 
     # Format values with rounded numbers and dollar sign
