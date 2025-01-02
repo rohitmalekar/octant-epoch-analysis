@@ -5,13 +5,13 @@ import numpy as np
 import plotly.graph_objects as go
 
 # Set page title
-st.title('Octant Grant Analytics - DRAFT')
+st.title('Octant Grant Analytics 2024')
 st.subheader('Powered by OSO')
+st.caption('Last updated: 02-Jan-2025')
 
 # Read CSV files from data folder
 try:
     monthly_events_df = pd.read_csv('./data/monthly_events_by_project.csv')
-    monthly_active_devs_df = pd.read_csv('./data/monthly_active_devs_by_project.csv')
     proj_collections_df = pd.read_csv('./data/octant_all_collections.csv')
     dev_count_by_epoch_df = pd.read_csv('./data/dev_count_by_epoch.csv')
     # Read and concatenate epoch CSV files
@@ -59,14 +59,6 @@ monthly_events_df = monthly_events_df.groupby(['project_id', 'event_type', 'buck
     'amount': 'sum'
 }).reset_index()
 
-# Convert month column to datetime for easier filtering
-monthly_active_devs_df['bucket_month'] = pd.to_datetime(monthly_active_devs_df['bucket_month'])
-
-# Aggregate the data by project_id, event_type, and bucket_month
-monthly_active_devs_df = monthly_active_devs_df.groupby(['project_id', 'user_segment_type', 'bucket_month']).agg({
-    'amount': 'sum'
-}).reset_index()
-
 # Read and concatenate epoch CSV files for funding
 epoch_funding = pd.concat(epoch_dfs, ignore_index=True)
 
@@ -82,51 +74,16 @@ epoch_funding['grant_pool_name'] = epoch_funding['grant_pool_name'].replace({
 })
 
 summary_container = st.container()
-summary_container.markdown('Over 6 Epochs starting Epoch Zero, Octant has funded approximately $5 million to 62 projects. The following analytics showcases 47 of these projects that have open source contributions.')
-
-
-#with summary_container:
-#    # Calculate total COMMIT_CODE amount for 2024
-#    commit_code_2024 = monthly_events_df[
-#        (monthly_events_df['event_type'] == 'COMMIT_CODE') & 
-#        (monthly_events_df['bucket_month'].dt.year == 2024)
-#    ]['amount'].sum()
-
-#    # Calculate total PULL_REQUEST_CLOSED amount for 2024
-#    pull_request_merged_2024 = monthly_events_df[
-#        (monthly_events_df['event_type'] == 'PULL_REQUEST_MERGED') & 
-#        (monthly_events_df['bucket_month'].dt.year == 2024)
-#    ]['amount'].sum()
-
-#    # Calculate total ISSUE_CLOSED amount for 2024
-#    issue_closed_2024 = monthly_events_df[
-#        (monthly_events_df['event_type'] == 'ISSUE_CLOSED') & 
-#        (monthly_events_df['bucket_month'].dt.year == 2024)
-#    ]['amount'].sum()
-
-#    # Display metrics using Streamlit in three columns
-#    col1, col2, col3 = st.columns(3)
-
-#    with col1:
-#        st.metric(
-#            label="Total Commits",
-#            value=int(commit_code_2024),
-#            border=True
-#        )
-
-#    with col2:
-#        st.metric(
-#            label="Total Pull Requests Merged",
-#            value=int(pull_request_merged_2024),
-#            border=True
-#        )
-
-#    with col3:
-#        st.metric(
-#            label="Total Issues Closed",
-#            value=int(issue_closed_2024),
-#            border=True
-#        )
+summary_container.markdown('Over 6 Epochs starting Epoch Zero, Octant has funded approximately $5 million to 62 projects. \
+                           Discover the stories behind the 47 open-source projects funded in 2024.')
+summary_container.markdown("""
+                            Explore how contributors and communities shape our digital future with data-driven insights into funding, developer engagement, and ecosystem growth.
+                            Dive in to uncover trends, compare project performance, and inform strategic decisions for maximizing impact.
+                            - **Visualize Progress**: Explore detailed visualizations of developer contributions and funding efficiency.
+                            - **Tailor Insights**: Customize metrics to dive deeper into what matters to you.
+                            - **Unlock Opportunities**: Learn how impactful ecosystems are evolving and thriving.
+                            Start exploring today to celebrate and support the future of open source innovation.
+                            """)
 
 
 # Create tabs for different sections of the analysis
@@ -218,6 +175,8 @@ with tab1:
 
     # Drop the redundant columns after merge
     selected_event_data = selected_event_data.drop(columns=['to_project_name', 'grant_pool_name'])
+
+    #st.dataframe(selected_event_data)
 
     # Create a scatter plot with metric_amount on Y axis and funding_amount on X axis
     fig = px.scatter(
@@ -577,7 +536,7 @@ with tab4:
     st.image("./images/all_clusters.png", caption="Visualization of Clustering Results")
 
     st.markdown("""
-    The clustering methodology uses various features such as star counts, forks, developer contributions, and activity over time to group projects into meaningful categories. Below is a summary of these clusters and their corresponding mean values across key metrics.
+    The clustering methodology uses various features such as star counts, forks, developer contributions, and activity over **the last 6 months** to group projects into meaningful categories. Below is a summary of these clusters and their corresponding mean values across key metrics.
     """)
 
     # Load and display the transformed cluster summary
@@ -602,53 +561,50 @@ with tab4:
 
     st.dataframe(
         transformed_cluster_summary_df,
-        column_order=['0', '4', '1', '2', '3'],
+        column_order=['3', '0', '2', '1'],
         column_config={
-            '0': st.column_config.Column(label='Emerging Projects', width=150),
-            '1': st.column_config.Column(label='Established Community Projects', width=150),
-            '2': st.column_config.Column(label='High-Traffic Collaborative Hubs', width=150),
-            '3': st.column_config.Column(label='Star Performers', width=150),
-            '4': st.column_config.Column(label='Specialized Focused Projects', width=150)
+            '0': st.column_config.Column(label='Steady Builders', width=150),
+            '1': st.column_config.Column(label='High-Traffic Ecosystems', width=150),
+            '2': st.column_config.Column(label='Established Pillars', width=150),
+            '3': st.column_config.Column(label='Emerging Pioneers', width=150),
         }
     )
 
     # Cluster Descriptions
     st.markdown("##### Cluster Descriptions")
     
-    st.image("./images/emerging.png", caption="Emerging and Specialized Projects")
-    st.markdown("###### Emerging Projects")
+    st.image("./images/emerging.png", caption="Emerging Pioneers")
+    st.markdown("###### Emerging Pioneers")
     st.markdown("""
-    - Moderate star and fork counts with relatively few developers.
-    - Active contributors over the past 6 months, indicating recent interest.
-    - Lower overall activity compared to other clusters, suggesting a project in its growth phase.
-    """)
+    - Low to moderate star and fork count, suggesting niche or early-stage projects.
+    - Smaller developer and contributor count, but active recent engagement is visible with higher relative active developer count and contributor count.
+    - Moderate commit count and Merged PRs.
+    - More recent first commit date, showcasing their status as relatively new or growing projects.""")
 
-    st.markdown("###### Specialized Focused Projects")
+    st.image("./images/steady.png", caption="Steady Builders")
+    st.markdown("###### Steady Builders")
     st.markdown("""
-    - Moderate star and fork counts with a small but dedicated developer and contributor base.
-    - High commit and pull request activity relative to the team size, indicating intense work by a focused team.
-    - Likely niche or highly specialized projects driven by committed contributors.
-    """)
+    - Moderate star and fork count, reflecting a stable and engaged user base.
+    - Developer count and contributor count are relatively consistent, indicating sustained long-term engagement.
+    - Commit count and Merged PRs are moderate, showcasing steady development activity.
+    - Count of Closed Issues indicates regular maintenance efforts.
+    - Projects in this cluster have older first commit date, implying they are established and focused on long-term sustainability.""")
+
   
-    st.image("./images/established.png", caption="Established, High-Traffic, and Star Performers")
-    st.markdown("###### Established Community Projects")
+    st.image("./images/pillars_and_high_traffic.png", caption="Established Pillars and High-Traffic Ecosystems")
+    st.markdown("###### Established Pillars")
     st.markdown("""
-    - High star and fork counts with a strong contributor base.
-    - Moderate recent developer activity, suggesting steady ongoing engagement.
-    - Likely long-standing projects with consistent user interest and moderate growth.
+    - Extremely high star and fork count, reflecting significant visibility and popularity in the ecosystem.
+    - Moderate to high developer and contributor count, focusing on maintaining quality and impact.
+    - Strong recent activity, with high commit count and Merged PRs.
+    - Typically have a long history, with earlier first commit date, indicating that they are mature projects with consistent growth over time.
     """)
 
-    st.markdown("###### High-Traffic Collaborative Hubs")
+    st.markdown("###### High-Traffic Ecosystems")
     st.markdown("""
-    - Very high contributor and developer counts, along with significant star and fork counts.
-    - High activity in the past 6 months, including commits, pull requests, and issue resolution.
-    - Indicates large, vibrant ecosystems with extensive collaboration and active community management.
-    """)
-
-    st.markdown("###### Star Performers")
-    st.markdown("""
-    - Exceptionally high star and fork counts, indicative of widespread popularity.
-    - Moderate developer and contributor counts, with steady recent activity.
-    - Likely mature, high-visibility projects with a stable but less dynamic contributor base.
-    """)
+    - Very high star and fork count, indicating widespread popularity and adoption.
+    - Significant developer and contributor count, reflecting large and vibrant teams.
+    - High active developer and contributor count, showcasing dynamic recent engagement.
+    - High commit count and Merged PRs, indicating rapid development cycles and active maintenance.
+    - These projects often have earlier first commit date, reflecting their mature and established status.""")
     

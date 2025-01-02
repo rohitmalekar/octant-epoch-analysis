@@ -44,7 +44,7 @@ scaler = MinMaxScaler()
 X_scaled = scaler.fit_transform(data_cleaned[features])
 
 # Applying K-Means clustering
-kmeans = KMeans(n_clusters=5, random_state=42)
+kmeans = KMeans(n_clusters=4, random_state=42)
 clusters = kmeans.fit_predict(X_scaled)
 
 # Adding cluster labels to the dataset
@@ -68,11 +68,10 @@ dark_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
 
 # Define custom labels for each cluster
 cluster_labels = {
-    '0': 'Emerging Projects',
-    '1': 'Established Community Projects',
-    '2': 'High-Traffic Collaborative Hubs',
-    '3': 'Star Performers',
-    '4': 'Specialized Focused Projects'
+    '0': 'Steady Builders',
+    '1': 'High-Traffic Ecosystems',
+    '2': 'Established Pillars',
+    '3': 'Emerging Pioneers',
 }
 
 # Apply the custom labels to the Cluster column

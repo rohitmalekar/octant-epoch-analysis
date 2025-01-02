@@ -1,51 +1,5 @@
-SELECT * FROM `fleet-bongo-424111-b3.oso_production.code_metrics_by_project_v1`
-where project_id in 
-(
- '8uJO7UNZda7b68AlyerXGkdWZfPsS8_DcYNhtk4afbs=',
-'YWx14a4ELnaE2V58GdSLn7sVQxwvFBrP7GTQuXsCUd4=',
-'h3w5ni5D_yQP0CrG9n_41fq8NDuANxU7nKTak_5GUv8=',
-'tjebT2TQMaehU8xF6AhwFzT6DSr4wrjoxLh1pE5Q7oo=',
-'VPRpp_l5T9Eh0u95IqfzUGdh-2DCLEp5TIxDQ8XMWJE=',
-'wdBmT3yweChtV4g4qcc1NN1QtfnmMPAuCVxoPkiAowY=',
-'SNdMHnnes04aSQQwpNdWT0uBt6VdKyT3Zog7miIsaK0=',
-'wV2X-YoRtKKe8l64B030vCC8JLhlFQxaafqSubSsl3w=',
-'_rSUGbgCLjCC0SxFrS6u6299eSa8Vde7C1ftbaFzBuo=',
-'-lP_Uvqt9rP8pWZQDW4VejaqpQDfLuc7mG5D59wRfbs=',
-'VhDGUKAWcJC-2T2YV_HNWy77Ptk64L5sewm6byGKR8A=',
-'UsLiYpuh5exI0XENoG3FGM-UhRSf6Xbis8NvjvwMh5w=',
-'RS5lOoCIf38rkKBpmpOurIyJA85KNvQSFbxdvzij80k=',
-'iilyWmaoJCXv0vPfyPQnIGYXoWyTZDlP0oQLMNIVj54=',
-'RVOuV0FCXB_YUCOIr_cb18IKzJwy_4K5-Ge-Ns4EYnw=',
-'cNWIkYYNllGaAe7Xslebf1OTgqitVGPpSfz5pD2B8lY=',
-'UNKoHLpnT_OziRiPCuX21uhgLNIJygsxuZz3A0TL-cg=',
-'64qp1ybgolFxPB47LJA0p7BGYKekaqGS8p3yqqvkL3o=',
-'4IF5N43rh3j9S83bUBcfoWy_2I4qcP8UulcrMsuJX-o=',
-'rqZBGkL_I2YdMzn6AsloysnvQd1P_szbw9ruZc2arQw=',
-'qrlafNIdzAmcq2z0PxvBFisxIJ29C9Cbpdvc_DEpmcU=',
-'kZVtBKGSl84JGQpuRfuqaUVlY0BP3XZWNy2wYKjB79s=',
-'Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc=',
-'zMr9ziUIls0NIAm5eLswVdNAjL-X9j4o2RcEQmrLf4c=',
-'FqJlC8IuZE2E3eTvQdMA4uG39qNxQSPSgw79bRli5Hs=',
-'bQiTKGQ-syTnuXT5qWWin_CyzvIy-etYkxpMzHGiHo4=',
-'0meRIUEV48cb8Plf7X1knIWJZmcrGA3NY91bcOlUNk8=',
-'_n9FHvFlG0nkjzzws25GuLhG6dj3bgWwiuxPwy5M4Hw=',
-'1mBkagpZ6JI5aGrhKsfnb7_M1rtz8N6nraFghzTJs-w=',
-'YVD9NruuwKCsQX_FPmSMN8A6m2F53PxYxW14W1eVFLU=',
-'osL3B-y8yn0ALvvF90E-K8sPXgenbqc3PCpeCC67MHE=',
-'fY-OQ-do-d63891xc7h50Ql9xYWksuN5cQiMyrm9VxM=',
-'-cqm4kiQPXiAI9GserwK_Jf2AF05Ygc5Mcmf6S9igjk=',
-'r06ZetKFJUG0eWrHEAW5wIlDXFDxyiZQdxxSqnmqs0k=',
-'50Zkidly04WdD8YGpVEbIq0WwTuhI_yuJcWihKUQNo8=',
-'6BxfXGCsH-o83hx52DVL09NneutKXpQeLugD4o7mr-4=',
-'LYjorXBAT3ups7hO6SJ_Uy7fft9PqTeD3Nq2m2El7uM=',
-'r1E7lYltpd3pipZ4-yhn6wABCt0mUfRdjxr208MG5fU=',
-'JtV4HW9C6jK66iQ7dhGM0GT7r49YrAFWZFvvLVFSnvQ=',
-'WT7Lsfb_KeEt4RyjfhfXuxFrMEhc2OJW7-LcS3gLdME=',
-'qHEjczna6kDTLN1fGMLq2d6rwKqfRU0mufHsRXr5cqA=',
-'JFq-iwGwIQrnVt0T7CwaVfsefjXknPPNfe4cABhxzyA=',
-'GCEAxg6YdGgGGKm2LPdzAc5sVMz0WbYthN1Hxmrmdv0=',
-'9FPohrEjU-h_5BTmL-HBlyLH7f9rLprx2zqBddNDtn0=',
-'Fkm6jVtExDnveW5EGnKI-DzzElcM_x9zOBIsVoDge78=',
-'rrqUDy2n7xxF-Ese7VHsfoT9GqaThYKWoLtPyZBQCxw=',
-'07RjBmujQG9SxIMIR384ywzvLfgQdH8gZBXJsYePuWY='
-)
+SELECT distinct metrics.*
+FROM `fleet-bongo-424111-b3.oso_production.code_metrics_by_project_v1` AS metrics JOIN
+  `fleet-bongo-424111-b3.oso_production.projects_by_collection_v1` AS collection ON
+  metrics.project_id = collection.project_id
+where collection_name in ('octant-01','octant-02','octant-03','octant-04','octant-05')
