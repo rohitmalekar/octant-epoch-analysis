@@ -117,9 +117,12 @@ with tab1:
         # Add the epoch column
         epoch_data['epoch'] = collection_name
         
+        # Ensure unique project_id and project_name pairs
+        unique_projects = proj_collections_df[['project_id', 'project_name']].drop_duplicates()
+
         # Merge to include project_name
         epoch_data = epoch_data.merge(
-            projects[['project_id', 'project_name']],
+            unique_projects,
             on='project_id',
             how='left'
         )
@@ -399,10 +402,13 @@ with tab3:
         
         # Add the epoch column
         epoch_data['epoch'] = collection_name
-        
+
+        # Ensure unique project_id and project_name pairs
+        unique_projects = proj_collections_df[['project_id', 'project_name']].drop_duplicates()
+
         # Merge to include project_name
         epoch_data = epoch_data.merge(
-            proj_collections_df[['project_id', 'project_name']],
+            unique_projects,
             on='project_id',
             how='left'
         )
@@ -411,6 +417,9 @@ with tab3:
         epoch_dataframes.append(epoch_data)
 
     all_project_data = pd.concat(epoch_dataframes, ignore_index=True)
+
+    all_project_data = all_project_data.drop_duplicates(subset=['project_id', 'project_name', 'event_type', 'epoch'])
+
 
     # Create the pivot table with filtered data in one step
     pivot_code_metrics_table = all_project_data[
@@ -422,6 +431,7 @@ with tab3:
         aggfunc='sum',  # Use sum to aggregate values if there are duplicates
         fill_value=0    # Fill missing values with 0
     ).reset_index()
+
 
     # Add a trend column using LineChartColumn
     pivot_code_metrics_table['trend'] = pivot_code_metrics_table.apply(
@@ -438,31 +448,57 @@ with tab3:
     })
 
 
-    pivot_funding_table = epoch_funding.pivot_table(
-        index=['to_project_name'],
+    # Ensure unique project_id and project_name pairs
+    unique_projects = proj_collections_df[['project_id', 'project_name']].drop_duplicates()
+    # Merge to include project_name
+    dev_count_by_epoch_df = dev_count_by_epoch_df.merge(
+        unique_projects,
+        on='project_id',
+        how='left'
+    )
+
+    # Ensure unique project_id and project_name pairs in dev_count_by_epoch_df
+    unique_dev_counts = dev_count_by_epoch_df[['project_id', 'project_name', 'epoch', 'active_dev_count']].drop_duplicates()
+
+    # Merge epoch_funding with dev_count_by_epoch_df to include active_dev_count
+    epoch_funding = epoch_funding.merge(
+        unique_dev_counts[['project_name', 'epoch', 'active_dev_count']],
+        left_on=['to_project_name', 'grant_pool_name'],
+        right_on=['project_name', 'epoch'],
+        how='left'
+    )
+
+    # Drop the redundant 'project_name' column from the merge
+    epoch_funding = epoch_funding.drop(columns=['project_name'])    
+
+
+    # Aggregate the data by project and epoch
+    aggregated_funding = epoch_funding.groupby(['to_project_name', 'grant_pool_name']).agg({
+        'amount': 'sum',
+        'active_dev_count': 'sum'
+    }).reset_index()
+
+    # Reshape the aggregated data to have 'dev' and 'amount' as rows
+    reshaped_funding_table = aggregated_funding.melt(
+        id_vars=['to_project_name', 'grant_pool_name'],
+        value_vars=['amount', 'active_dev_count'],
+        var_name='metric',
+        value_name='value'
+    )
+
+    # Pivot the reshaped table to have epochs as columns
+    reshaped_funding_table = reshaped_funding_table.pivot_table(
+        index=['to_project_name', 'metric'],
         columns='grant_pool_name',
-        values='amount',
-        aggfunc='sum',
+        values='value',
         fill_value=0
     ).reset_index()
 
-    pivot_funding_table['trend'] = pivot_funding_table.apply(
+    # Add a trend column using LineChartColumn
+    reshaped_funding_table['trend'] = reshaped_funding_table.apply(
         lambda row: [row['octant-02'], row['octant-03'], row['octant-04'], row['octant-05']],
         axis=1
     )
-
-    # Rename columns
-    #pivot_funding_table = pivot_funding_table.rename(columns={
-    #    'epoch_2': 'octant-02',
-    #    'epoch_3': 'octant-03',
-    #    'epoch_4': 'octant-04',
-    #    'epoch_5': 'octant-05'
-    #})
-
-
-    # Format values with rounded numbers and dollar sign
-    for col in ['octant-02', 'octant-03', 'octant-04', 'octant-05']:
-        pivot_funding_table[col] = pivot_funding_table[col].apply(lambda x: f"${x:,.0f}")
 
 
     # Extract unique project names from all_epoch_data
@@ -485,20 +521,40 @@ with tab3:
         # Drop project name column
         filtered_code_metrics_table = filtered_code_metrics_table.drop(columns=['project_name'])
 
-        filtered_funding_table = pivot_funding_table[pivot_funding_table['to_project_name'] == selected_project]
+        filtered_funding_table = reshaped_funding_table[reshaped_funding_table['to_project_name'] == selected_project]
 
+        # Drop the 'to_project_name' column
+        filtered_funding_table = filtered_funding_table.drop(columns=['to_project_name'])
+
+        filtered_funding_table = filtered_funding_table.sort_values(by='metric', ascending=False)
+
+        # Ensure the values are numeric before formatting
+        filtered_funding_table.loc[filtered_funding_table['metric'] == 'amount', filtered_funding_table.columns[1:]] = \
+            filtered_funding_table.loc[filtered_funding_table['metric'] == 'amount', filtered_funding_table.columns[1:]].applymap(
+                lambda x: f"${x:,.0f}" if isinstance(x, (int, float)) else x
+            )
+        
+        # Rename the metric values
+        filtered_funding_table['metric'] = filtered_funding_table['metric'].replace({
+            'amount': 'Funding Amount',
+            'active_dev_count': '# of Active Devs'
+        })
+
+
+        # Display the reshaped table with the trend column
         st.dataframe(
             filtered_funding_table,
             column_config={
-                'trend': st.column_config.BarChartColumn(
+                'trend': st.column_config.LineChartColumn(
                     label='Trend',
                     width=150,
-                    y_min = 0
+                    y_min=0
                 )
             },
             use_container_width=True,
             hide_index=True
         )
+        
 
         # Display the pivot table with the trend column
         st.dataframe(
