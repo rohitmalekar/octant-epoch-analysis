@@ -385,6 +385,9 @@ with tab2:
 
 with tab3:
 
+    st.markdown("#### Project Trends: Insights Over Time")
+    st.markdown("Analyzing project activity across multiple epochs uncovers valuable trends in contributions and funding patterns. By tracking key metrics like commits, PRs merged, and funding allocations over time, this section highlights how projects evolve and adapt.")
+
     # Get project IDs for filtering
     project_ids = proj_collections_df['project_id'].unique()
         
