@@ -577,6 +577,7 @@ with tab4:
     try:
         cluster_summary_df = pd.read_csv('./data/cluster_summary.csv')
         projects_with_clusters = pd.read_csv('./data/original_data_with_clusters.csv')
+        pca_results = pd.read_csv('./data/pca_results.csv')
     except FileNotFoundError as e:
         st.error(f"Failed to load cluster_summary.csv: {e}")
         st.stop()
@@ -586,6 +587,9 @@ with tab4:
 
     st.markdown("#### Clustering Insights for Tailored Capital Allocation")
 
+    # Define a custom pastel color sequence
+    custom_pastel_colors = ['#FFB3BA', '#FFDFBA', '#FFFFBA', '#BAFFC9', '#BAE1FF']
+
     # Insert a sunburst chart here where clicking on cluster name will show the projects in that cluster
     fig = px.sunburst(
         projects_with_clusters,
@@ -593,7 +597,7 @@ with tab4:
         #values='project_name',  # Use project names as values for size
         color='cluster_label',  # Color by cluster
         #title="Projects by Cluster",
-        color_discrete_sequence=px.colors.qualitative.Pastel  # Use a pastel color sequence
+        color_discrete_sequence=custom_pastel_colors
     )
 
         # Update layout for better visualization
@@ -622,8 +626,52 @@ with tab4:
     """)
 
     # Methodology Section
-    st.markdown("###### Methodology")
-    st.image("./images/all_clusters.png", caption="Visualization of Clustering Results")
+    st.markdown("##### Methodology")
+    #st.image("./images/all_clusters.png", caption="Visualization of Clustering Results")
+    st.markdown("""
+                Key metrics such as stars, forks, developer contributions, commits, and recent activity were analyzed to group projects using the K-Means algorithm. This method identifies patterns and similarities, organizing projects into four distinct clusters. To make the clusters easier to visualize, Principal Component Analysis (PCA) was applied, reducing the data to two dimensions while preserving key relationships.
+                """)
+    st.markdown("""
+                Interacting with the Scatter Plot:
+                - **Highlight an area**: Click and drag on the scatter plot to zoom in on a specific region.
+                - **Zoom out**: Click anywhere on the plot to reset and zoom out.
+                """)
+    # Define darker equivalents of the pastel colors
+    darker_colors = ['#81C784', '#E57373', '#FFB74D', '#FFF176',]
+
+    # Interactive Plotly scatter plot with project names displayed above each dot
+    fig = px.scatter(
+        pca_results,
+        x='PCA1',
+        y='PCA2',
+        color='Cluster',
+        #title="Clustering of Projects (Plotly Interactive)",
+        labels={'PCA1': 'PCA Component 1', 'PCA2': 'PCA Component 2'},
+        template="plotly",
+        text='project_name',  # Display project_name as text on the plot
+        color_discrete_sequence=darker_colors
+    )
+
+    # Update the layout to adjust text position
+    fig.update_traces(textposition='top center')
+
+    # Update layout to move the legend to the bottom
+    fig.update_layout(
+        legend=dict(
+            orientation="h",  # Horizontal orientation
+            yanchor="bottom",
+            y=-0.2,  # Adjust this value to move the legend further down
+            xanchor="center",
+            x=0.5
+        ),
+        width=800,
+        height=800
+    )
+
+    fig.update_traces(marker=dict(size=10))
+    
+    # Display the sunburst chart in Streamlit
+    st.plotly_chart(fig)
     
     st.markdown("""
 
@@ -637,7 +685,7 @@ with tab4:
     """)
 
     st.markdown("""
-    The clustering methodology uses various features such as star counts, forks, developer contributions, and activity over **the last 6 months** to group projects into meaningful categories. Below is a summary of these clusters and their corresponding mean values across key metrics.
+    Below is a summary of these clusters and their corresponding mean values across key metrics.
     """)
 
     

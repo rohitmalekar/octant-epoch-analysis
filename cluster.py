@@ -62,9 +62,11 @@ pca_df['project_name'] = data_cleaned['project_name']
 # Ensure 'Cluster' is treated as a categorical variable
 pca_df['Cluster'] = pca_df['Cluster'].astype(str)
 
-# Define a custom color sequence with 5 dark contrasting colors
-dark_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
+# Define a custom pastel color sequence
+custom_pastel_colors = ['#FFB3BA', '#FFDFBA', '#FFFFBA', '#BAFFC9']
 
+# Define darker equivalents of the pastel colors
+darker_colors = ['#81C784', '#E57373', '#FFB74D', '#FFF176',]
 
 # Define custom labels for each cluster
 cluster_labels = {
@@ -87,7 +89,7 @@ fig = px.scatter(
     labels={'PCA1': 'PCA Component 1', 'PCA2': 'PCA Component 2'},
     template="plotly",
     text='project_name',  # Display project_name as text on the plot
-    color_discrete_sequence=dark_colors  # Use custom dark color sequence
+    color_discrete_sequence=darker_colors
 )
 
 # Update the layout to adjust text position
@@ -107,6 +109,8 @@ fig.update_layout(
 
 fig.update_traces(marker=dict(size=10))
 fig.show()
+
+pca_df.to_csv('./data/pca_results.csv', index=False)
 
 # Convert ordinal dates back to datetime
 try:
