@@ -123,8 +123,11 @@ print(cluster_summary)
 # Save cluster summary to a CSV file
 cluster_summary.to_csv('./data/cluster_summary.csv', index=True)
 
-# Add cluster labels to the original data
+# Add cluster numbers to the original data
 data['cluster'] = clusters
 
-# Save the original data with clusters to a new CSV file
+# Convert cluster numbers to strings for mapping
+data['cluster_label'] = data['cluster'].astype(str).map(cluster_labels)
+
+# Save the original data with clusters and labels to a new CSV file
 data.to_csv('./data/original_data_with_clusters.csv', index=False)

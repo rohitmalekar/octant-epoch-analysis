@@ -6,8 +6,7 @@ import plotly.graph_objects as go
 
 # Set page title
 st.title('Octant Grant Analytics 2024')
-st.subheader('Powered by OSO')
-st.caption('Last updated: 02-Jan-2025')
+st.caption('Powered by OSO, Last updated: 06-Jan-2025')
 
 # Read CSV files from data folder
 try:
@@ -82,14 +81,13 @@ summary_container.markdown("""
                             - **Visualize Progress**: Explore detailed visualizations of developer contributions and funding efficiency.
                             - **Tailor Insights**: Customize metrics to dive deeper into what matters to you.
                             - **Unlock Opportunities**: Learn how impactful ecosystems are evolving and thriving.
-                            Start exploring today to celebrate and support the future of open source innovation.
                             """)
 
 
 # Create tabs for different sections of the analysis
-tab1, tab2, tab3, tab4 = st.tabs(["Analysis across Epochs", "Top Projects by Epoch", "Project Trends", "Strategic Findings"])
+tab1, tab2, tab3, tab4 = st.tabs(["Project Trends", "Analysis across Epochs", "Top Projects by Epoch", "Strategic Findings"])
 
-with tab1:
+with tab2:
     st.markdown("#### Analyzing Developer Productivity and Funding Distribution Across Epochs")
     st.markdown("Explore how project productivity, measured as event contributions per active developer, correlates with funding received across various epochs. This interactive scatter plot highlights differences in developer team sizes and their impact on funding efficiency.")
 
@@ -211,7 +209,7 @@ with tab1:
     # Display the plot in Streamlit
     st.plotly_chart(fig)
 
-with tab2:
+with tab3:
 
     st.markdown("#### Customized Project Rankings and Epoch-Wise Performance")
     st.markdown("Assign weights to your selected metrics and explore the top-performing projects across funding epochs. Choose to normalize scores by team size for a balanced comparison or view absolute scores for a broader perspective.")
@@ -383,7 +381,7 @@ with tab2:
     else:
         st.warning("Total weight must be 100 to show rankings.")
 
-with tab3:
+with tab1:
 
     st.markdown("#### Project Trends: Insights Over Time")
     st.markdown("Analyzing project activity across multiple epochs uncovers valuable trends in contributions and funding patterns. By tracking key metrics like commits, PRs merged, and funding allocations over time, this section highlights how projects evolve and adapt.")
@@ -548,9 +546,9 @@ with tab3:
         st.dataframe(
             filtered_funding_table,
             column_config={
-                'trend': st.column_config.LineChartColumn(
+                'trend': st.column_config.BarChartColumn(
                     label='Trend',
-                    width=150,
+                    width="small",
                     y_min=0
                 )
             },
@@ -564,10 +562,10 @@ with tab3:
             filtered_code_metrics_table,
             column_config={
 
-                'trend': st.column_config.LineChartColumn(
+                'trend': st.column_config.BarChartColumn(
                     label='Trend',
-                    width=150,
-                    y_min = 0
+                    width="small",
+                    #y_min = 0
                 )
             },
             use_container_width=True,
@@ -575,39 +573,74 @@ with tab3:
         )
 
 with tab4:
+    # Load and display the transformed cluster summary
+    try:
+        cluster_summary_df = pd.read_csv('./data/cluster_summary.csv')
+        projects_with_clusters = pd.read_csv('./data/original_data_with_clusters.csv')
+    except FileNotFoundError as e:
+        st.error(f"Failed to load cluster_summary.csv: {e}")
+        st.stop()
+    except pd.errors.EmptyDataError:
+        st.error("cluster_summary.csv or original_data_with_clusters.csv is empty")
+        st.stop()
 
-    st.markdown("#### Clustering Insights for Tailored Capital Allocation in Octant V2")
+    st.markdown("#### Clustering Insights for Tailored Capital Allocation")
 
-    # Contextual Introduction
-    with st.expander("📜 **Introduction**", expanded=True):
-        st.markdown("""
-        The [Octant V2 framework](https://octantapp.notion.site/Degens-Dragons-Octant-V2-Overview-full-version-0-4-127e165689aa8022bb01dfc76e3cca4d) envisions a dynamic and decentralized approach to deploy capital and efficiently stream value to impactful initiatives within a project's ecosystem. This is achieved by leveraging community-driven decision-making and transparent onchain mechanisms.
+    # Insert a sunburst chart here where clicking on cluster name will show the projects in that cluster
+    fig = px.sunburst(
+        projects_with_clusters,
+        path=['cluster_label', 'project_name'],  # Define the hierarchy
+        #values='project_name',  # Use project names as values for size
+        color='cluster_label',  # Color by cluster
+        #title="Projects by Cluster",
+        color_discrete_sequence=px.colors.qualitative.Pastel  # Use a pastel color sequence
+    )
 
-        In any large ecosystem, different projects require varying types of support depending on their maturity, popularity, and level of community engagement. Octant addresses these diverse needs while maximizing impact by embracing a **plurality of allocation strategies**.
+        # Update layout for better visualization
+    fig.update_layout(
+        margin=dict(t=40, l=0, r=0, b=0),
+        height=600
+    )
 
-        > *By categorizing projects into distinct clusters—ranging from emerging initiatives to high-traffic hubs and star performers—Octant can tailor allocation strategies to match the unique needs and potential of each group.*
+    # Display the sunburst chart in Streamlit
+    st.plotly_chart(fig)    
 
-        These clusters provide the foundation for understanding the underlying characteristics of funded projects and inform data-driven allocation strategies.
-        """)
+    st.markdown("""
+        The grouping of projects is derived from a clustering methodology that leverages features such as star counts, forks, developer contributions, and recent activity over the past six months. This approach organizes projects into meaningful categories, forming the basis for understanding the underlying characteristics of funded initiatives.
+    """)
+
+    st.markdown("""
+        A key takeaway from this analysis is that Octant's cohort of projects is highly diverse. As the ecosystem scales, a one-size-fits-all funding strategy may not be sufficient to maximize impact. Instead, tailored allocation mechanisms based on project clusters—such as Emerging Pioneers, Steady Builders, Established Pillars, and High-Traffic Ecosystems—can more effectively meet the needs of projects with similar characteristics.
+        These clusters offer actionable insights for refining Octant’s Epoch design and grantee strategy:
+        - **Emerging Pioneers** benefit from targeted funding to support their growth and engagement, given their high relative activity despite smaller teams and niche appeal.
+        - **Steady Builders** represent opportunities for sustained investment to support long-term development and stability in the ecosystem.
+        - Given their popularity and maturity, **Established Pillars and High-Traffic Ecosystems** require strategies emphasizing maintenance, scalability, and broad impact.
+    """)
+
+    st.markdown("""
+        By implementing tailored allocation mechanisms for these clusters, Octant can optimize resource distribution, enhance its impact across the public goods funding space, and make longitudinal project performance tracking more actionable. This approach ensures that funding strategies evolve alongside the diversity and needs of the ecosystem, paving the way for sustainable growth and innovation.
+    """)
 
     # Methodology Section
-    st.markdown("##### Methodology")
+    st.markdown("###### Methodology")
     st.image("./images/all_clusters.png", caption="Visualization of Clustering Results")
+    
+    st.markdown("""
+
+    | **Metric**                     | **Emerging Pioneers**                 | **Steady Builders**                 | **Established Pioneers**            | **High-Traffic Ecosystems**          |
+    |--------------------------------|---------------------------------------|-------------------------------------|-------------------------------------|---------------------------------------|
+    | **Summary**                    | Newly launched, smaller teams with moderate activity, showcasing potential for growth. | Medium-sized, stable teams maintaining consistent contributions over time. | Large, highly active teams with significant visibility and a history of sustained growth. | Mature projects with exceptional popularity and high levels of recent activity, driven by dynamic teams. |
+    | **Popularity**                 | Low popularity; niche appeal.         | Moderate popularity; stable user base. | High popularity; widely recognized. | Extremely popular; broad adoption.   |
+    | **Team Size**                  | Small teams with niche focus.         | Medium-sized teams with steady contributions. | Large, well-established teams.      | Medium-sized but highly active teams.|
+    | **Recent Activity**            | Moderate activity; growing momentum.  | Consistent activity; focused on stability. | Very high activity; rapid progress. | High activity; dynamic and fast-paced.|
+    | **Age of Project**             | Newer projects; recent emergence.     | Established and sustainable.        | Mature and consistently growing.    | Long-standing, well-established projects. |
+    """)
 
     st.markdown("""
     The clustering methodology uses various features such as star counts, forks, developer contributions, and activity over **the last 6 months** to group projects into meaningful categories. Below is a summary of these clusters and their corresponding mean values across key metrics.
     """)
 
-    # Load and display the transformed cluster summary
-    try:
-        cluster_summary_df = pd.read_csv('./data/cluster_summary.csv')
-    except FileNotFoundError as e:
-        st.error(f"Failed to load cluster_summary.csv: {e}")
-        st.stop()
-    except pd.errors.EmptyDataError:
-        st.error("cluster_summary.csv is empty")
-        st.stop()
-
+    
     cluster_summary_df = cluster_summary_df.round(0)
     transformed_cluster_summary_df = cluster_summary_df.set_index("cluster").T
     if 'first_commit_date' in transformed_cluster_summary_df.index:
@@ -628,42 +661,3 @@ with tab4:
             '3': st.column_config.Column(label='Emerging Pioneers', width=150),
         }
     )
-
-    # Cluster Descriptions
-    st.markdown("##### Cluster Descriptions")
-    
-    st.image("./images/emerging.png", caption="Emerging Pioneers")
-    st.markdown("###### Emerging Pioneers")
-    st.markdown("""
-    - Low to moderate star and fork count, suggesting niche or early-stage projects.
-    - Smaller developer and contributor count, but active recent engagement is visible with higher relative active developer count and contributor count.
-    - Moderate commit count and Merged PRs.
-    - More recent first commit date, showcasing their status as relatively new or growing projects.""")
-
-    st.image("./images/steady.png", caption="Steady Builders")
-    st.markdown("###### Steady Builders")
-    st.markdown("""
-    - Moderate star and fork count, reflecting a stable and engaged user base.
-    - Developer count and contributor count are relatively consistent, indicating sustained long-term engagement.
-    - Commit count and Merged PRs are moderate, showcasing steady development activity.
-    - Count of Closed Issues indicates regular maintenance efforts.
-    - Projects in this cluster have older first commit date, implying they are established and focused on long-term sustainability.""")
-
-  
-    st.image("./images/pillars_and_high_traffic.png", caption="Established Pillars and High-Traffic Ecosystems")
-    st.markdown("###### Established Pillars")
-    st.markdown("""
-    - Extremely high star and fork count, reflecting significant visibility and popularity in the ecosystem.
-    - Moderate to high developer and contributor count, focusing on maintaining quality and impact.
-    - Strong recent activity, with high commit count and Merged PRs.
-    - Typically have a long history, with earlier first commit date, indicating that they are mature projects with consistent growth over time.
-    """)
-
-    st.markdown("###### High-Traffic Ecosystems")
-    st.markdown("""
-    - Very high star and fork count, indicating widespread popularity and adoption.
-    - Significant developer and contributor count, reflecting large and vibrant teams.
-    - High active developer and contributor count, showcasing dynamic recent engagement.
-    - High commit count and Merged PRs, indicating rapid development cycles and active maintenance.
-    - These projects often have earlier first commit date, reflecting their mature and established status.""")
-    
