@@ -5,6 +5,7 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 import plotly.express as px
 from datetime import datetime
+import numpy as np
 
 # Load the dataset (update the file path to match your environment)
 file_path = './data/6_month_code_metrics.csv'  # Replace with your file path
@@ -17,10 +18,11 @@ features = [
     "developer_count",
     "contributor_count",
     "active_developer_count_6_months",
-    "contributor_count_6_months",    
-    "commit_count_6_months",
-    "merged_pull_request_count_6_months",
-    "closed_issue_count_6_months",
+    # Normalized 6-month metrics
+    "commits_per_dev",
+    "prs_per_dev",
+    "issues_per_dev",
+    "contributors_per_dev",
     "first_commit_date"
 ]
 
@@ -32,6 +34,20 @@ data = data.dropna(subset=["first_commit_date", "last_commit_date"])
 data["first_commit_date"] = data["first_commit_date"].apply(lambda x: x.toordinal())
 data["last_commit_date"] = data["last_commit_date"].apply(lambda x: x.toordinal())
 
+# Create normalized metrics
+data['commits_per_dev'] = data['commit_count_6_months'] / data['active_developer_count_6_months']
+data['prs_per_dev'] = data['merged_pull_request_count_6_months'] / data['active_developer_count_6_months']
+data['issues_per_dev'] = data['closed_issue_count_6_months'] / data['active_developer_count_6_months']
+data['contributors_per_dev'] = data['contributor_count_6_months'] / data['active_developer_count_6_months']
+
+# Handle infinite values from division by zero
+data = data.replace([np.inf, -np.inf], np.nan)
+
+# Additional preprocessing steps
+# 1. Log transform highly skewed features
+skewed_features = ['star_count', 'fork_count', 'commits_per_dev', 'prs_per_dev', 'issues_per_dev']
+for feature in skewed_features:
+    data[feature] = np.log1p(data[feature])  # log1p handles zero values
 
 # Drop rows with missing values in selected features
 data_cleaned = data.dropna(subset=features)
@@ -56,24 +72,27 @@ X_pca = pca.fit_transform(X_scaled)
 
 # Create a DataFrame for PCA results and clusters, including project names
 pca_df = pd.DataFrame(X_pca, columns=['PCA1', 'PCA2'])
+pca_df.index = data_cleaned.index  # Ensure indices match
 pca_df['Cluster'] = clusters
-pca_df['project_name'] = data_cleaned['project_name']
+pca_df['project_name'] = data_cleaned['project_name'].values  # Use .values to ensure direct assignment
+
 
 # Ensure 'Cluster' is treated as a categorical variable
 pca_df['Cluster'] = pca_df['Cluster'].astype(str)
 
 # Define a custom pastel color sequence
-custom_pastel_colors = ['#FFB3BA', '#FFDFBA', '#FFFFBA', '#BAFFC9']
+custom_pastel_colors = ['#FFB3BA', '#FFDFBA', '#D7BDE2', '#BAFFC9', '#BAE1FF']
 
 # Define darker equivalents of the pastel colors
-darker_colors = ['#81C784', '#E57373', '#FFB74D', '#FFF176',]
+darker_colors = ['#81C784', '#E57373', '#9B59B6', '#FFB74D', '#64B5F6']
 
 # Define custom labels for each cluster
 cluster_labels = {
-    '0': 'Steady Builders',
-    '1': 'High-Traffic Ecosystems',
-    '2': 'Established Pillars',
-    '3': 'Emerging Pioneers',
+    '0': 'Early-Stage Projects',
+    '1': 'High-Engagement Projects',
+    '2': 'Niche Growing Projects',
+    '3': 'Actively Evolving Projects',
+    '4': 'Mature Ecosystem Leaders',
 }
 
 # Apply the custom labels to the Cluster column
@@ -128,10 +147,10 @@ print(cluster_summary)
 cluster_summary.to_csv('./data/cluster_summary.csv', index=True)
 
 # Add cluster numbers to the original data
-data['cluster'] = clusters
+data_cleaned['cluster'] = clusters
 
 # Convert cluster numbers to strings for mapping
-data['cluster_label'] = data['cluster'].astype(str).map(cluster_labels)
+data_cleaned['cluster_label'] = data_cleaned['cluster'].astype(str).map(cluster_labels)
 
 # Save the original data with clusters and labels to a new CSV file
-data.to_csv('./data/original_data_with_clusters.csv', index=False)
+data_cleaned.to_csv('./data/original_data_with_clusters.csv', index=False)

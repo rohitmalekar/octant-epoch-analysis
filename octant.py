@@ -586,18 +586,25 @@ with tab4:
         st.stop()
 
     st.markdown("#### Clustering Insights for Tailored Capital Allocation")
+    st.caption("""
+        Click on a cluster to see the projects in that cluster.
+    """)
 
-    # Define a custom pastel color sequence
-    custom_pastel_colors = ['#FFB3BA', '#FFDFBA', '#FFFFBA', '#BAFFC9', '#BAE1FF']
+    # Define color mapping for specific cluster labels
+    cluster_color_mapping = {
+        'Early-Stage Projects': '#FFDFBA',
+        'High-Engagement Projects': '#FFB3BA',
+        'Niche Growing Projects': '#BAFFC9',
+        'Actively Evolving Projects': '#BAE1FF',
+        'Mature Ecosystem Leaders': '#D7BDE2'
+    }
 
-    # Insert a sunburst chart here where clicking on cluster name will show the projects in that cluster
+    # Insert sunburst chart with specific color mapping
     fig = px.sunburst(
         projects_with_clusters,
-        path=['cluster_label', 'project_name'],  # Define the hierarchy
-        #values='project_name',  # Use project names as values for size
-        color='cluster_label',  # Color by cluster
-        #title="Projects by Cluster",
-        color_discrete_sequence=custom_pastel_colors
+        path=['cluster_label', 'project_name'],
+        color='cluster_label',
+        color_discrete_map=cluster_color_mapping  # Use the mapping dictionary here
     )
 
         # Update layout for better visualization
@@ -610,34 +617,70 @@ with tab4:
     st.plotly_chart(fig)    
 
     st.markdown("""
-        The grouping of projects is derived from a clustering methodology that leverages features such as star counts, forks, developer contributions, and recent activity over the past six months. This approach organizes projects into meaningful categories, forming the basis for understanding the underlying characteristics of funded initiatives.
+        The following analysis clusters projects based on their overall popularity (stars and forks), community size (developers and contributors), and how actively the community engages with the project. For each active developer, we look at their typical contribution patterns like how many commits they make, pull requests they submit, and issues they close, along with how long the project has been around.
     """)
 
     st.markdown("""
-        A key takeaway from this analysis is that Octant's cohort of projects is highly diverse. As the ecosystem scales, a one-size-fits-all funding strategy may not be sufficient to maximize impact. Instead, tailored allocation mechanisms based on project clusters—such as Emerging Pioneers, Steady Builders, Established Pillars, and High-Traffic Ecosystems—can more effectively meet the needs of projects with similar characteristics.
-        These clusters offer actionable insights for refining Octant’s Epoch design and grantee strategy:
-        - **Emerging Pioneers** benefit from targeted funding to support their growth and engagement, given their high relative activity despite smaller teams and niche appeal.
-        - **Steady Builders** represent opportunities for sustained investment to support long-term development and stability in the ecosystem.
-        - Given their popularity and maturity, **Established Pillars and High-Traffic Ecosystems** require strategies emphasizing maintenance, scalability, and broad impact.
+        The analysis highlights the diversity of Octant’s cohort of projects, underscoring the need for funding strategies tailored to the unique characteristics of each cluster. As the ecosystem scales, a one-size-fits-all approach may fail to optimize impact. Instead, designing allocation mechanisms based on clusters can better meet the distinct needs of these groups.
     """)
 
     st.markdown("""
-        By implementing tailored allocation mechanisms for these clusters, Octant can optimize resource distribution, enhance its impact across the public goods funding space, and make longitudinal project performance tracking more actionable. This approach ensures that funding strategies evolve alongside the diversity and needs of the ecosystem, paving the way for sustainable growth and innovation.
+        **Early-Stage Projects**
+        - *Key Characteristics:* Recent origins, small teams, limited visibility (low star and fork counts), but relatively active given their scale.
+        - *Actionable Insights:*
+          - Targeted micro-grants or seed funding to encourage initial development and growth
+          - Programs to enhance visibility, such as mentorship and partnerships with established projects
+          - Tools for streamlined onboarding
+
+        **High-Engagement Projects**
+        - *Key Characteristics:* High star and fork counts, large contributor base, consistent activity, and mature development processes.
+        - *Actionable Insights:*
+          - Provide strategic funding focused on maintenance, scalability, and innovation
+          - Encourage participation in collaborative initiatives to strengthen ecosystem-wide integration
+          - Offer resources for managing high community demand
+
+        **Niche Growing Projects**
+        - *Key Characteristics:* Steady, mid-sized developer and contributor base with moderate visibility (stars, forks). Focused but consistent development cycles.
+        - *Actionable Insights:*
+          - Sustained funding to support iterative development and stability
+          - Encourage outreach programs to increase awareness and attract a broader user base
+          - Facilitate networking opportunities to connect with complementary initiatives
+
+        **Actively Evolving Projects**
+        - *Key Characteristics:* Relatively recent projects with smaller but highly active teams. High activity per developer, particularly in issues and pull requests.
+        - *Actionable Insights:*
+          - Flexible funding structures to support dynamic growth and rapid iteration
+          - Resources for enhancing contributor onboarding and documentation
+          - Highlight success stories to inspire similar projects
+
+        **Mature Ecosystem Leaders**
+        - *Key Characteristics:* Long-standing projects with very high visibility and broad contributor engagement. High levels of activity across all metrics, reflecting their critical role in the ecosystem.
+        - *Actionable Insights:*
+          - Focus funding on maintaining stability, addressing technical debt, and ensuring security
+          - Invest in scalability to handle increasing community demand
+          - Leverage these projects as flagship examples for the ecosystem
+    """)
+    
+
+    st.markdown("""
+        **Strategic Takeaway**
+        Octant’s highly diverse project ecosystem requires tailored funding and support strategies to maximize impact. By aligning allocation mechanisms with the unique characteristics of these clusters, Octant can foster growth, sustainability, and scalability across its ecosystem, ensuring resources are directed where they are most needed. 
     """)
 
     # Methodology Section
     st.markdown("##### Methodology")
     #st.image("./images/all_clusters.png", caption="Visualization of Clustering Results")
     st.markdown("""
-                Key metrics such as stars, forks, developer contributions, commits, and recent activity were analyzed to group projects using the K-Means algorithm. This method identifies patterns and similarities, organizing projects into four distinct clusters. To make the clusters easier to visualize, Principal Component Analysis (PCA) was applied, reducing the data to two dimensions while preserving key relationships.
+                The clustering methodology employs K-means (k=5) on MinMax-scaled features, with log transformation applied to handle highly skewed distributions in metrics like stars, forks, and per-developer activity rates. The high-dimensional feature space is visualized through PCA (Principal Component Analysis) reduction to 2D, while the original clustering is performed on the full feature set including project scale metrics (stars, forks, developer counts), normalized activity metrics (commits/PRs/issues per developer), and project maturity indicators (first commit date).
                 """)
     st.markdown("""
                 Interacting with the Scatter Plot:
                 - **Highlight an area**: Click and drag on the scatter plot to zoom in on a specific region.
                 - **Zoom out**: Click anywhere on the plot to reset and zoom out.
                 """)
+
     # Define darker equivalents of the pastel colors
-    darker_colors = ['#81C784', '#E57373', '#FFB74D', '#FFF176',]
+    darker_colors = ['#81C784', '#E57373', '#9B59B6', '#FFB74D', '#64B5F6']
 
     # Interactive Plotly scatter plot with project names displayed above each dot
     fig = px.scatter(
@@ -673,39 +716,29 @@ with tab4:
     # Display the sunburst chart in Streamlit
     st.plotly_chart(fig)
     
-    st.markdown("""
-
-    | **Metric**                     | **Emerging Pioneers**                 | **Steady Builders**                 | **Established Pioneers**            | **High-Traffic Ecosystems**          |
-    |--------------------------------|---------------------------------------|-------------------------------------|-------------------------------------|---------------------------------------|
-    | **Summary**                    | Newly launched, smaller teams with moderate activity, showcasing potential for growth. | Medium-sized, stable teams maintaining consistent contributions over time. | Large, highly active teams with significant visibility and a history of sustained growth. | Mature projects with exceptional popularity and high levels of recent activity, driven by dynamic teams. |
-    | **Popularity**                 | Low popularity; niche appeal.         | Moderate popularity; stable user base. | High popularity; widely recognized. | Extremely popular; broad adoption.   |
-    | **Team Size**                  | Small teams with niche focus.         | Medium-sized teams with steady contributions. | Large, well-established teams.      | Medium-sized but highly active teams.|
-    | **Recent Activity**            | Moderate activity; growing momentum.  | Consistent activity; focused on stability. | Very high activity; rapid progress. | High activity; dynamic and fast-paced.|
-    | **Age of Project**             | Newer projects; recent emergence.     | Established and sustainable.        | Mature and consistently growing.    | Long-standing, well-established projects. |
-    """)
-
-    st.markdown("""
-    Below is a summary of these clusters and their corresponding mean values across key metrics.
-    """)
+    #st.markdown("""
+    #Below is a summary of these clusters and their corresponding mean values across key metrics.
+    #""")
 
     
-    cluster_summary_df = cluster_summary_df.round(0)
-    transformed_cluster_summary_df = cluster_summary_df.set_index("cluster").T
-    if 'first_commit_date' in transformed_cluster_summary_df.index:
-        transformed_cluster_summary_df.loc['first_commit_date'] = pd.to_datetime(
-            transformed_cluster_summary_df.loc['first_commit_date']
-        ).dt.year.astype(str)
-    for index in transformed_cluster_summary_df.index:
-        if index != 'first_commit_date':
-            transformed_cluster_summary_df.loc[index] = transformed_cluster_summary_df.loc[index].astype(int)
+    #cluster_summary_df = cluster_summary_df.round(0)
+    #transformed_cluster_summary_df = cluster_summary_df.set_index("cluster").T
+    #if 'first_commit_date' in transformed_cluster_summary_df.index:
+    #    transformed_cluster_summary_df.loc['first_commit_date'] = pd.to_datetime(
+    #        transformed_cluster_summary_df.loc['first_commit_date']
+    #    ).dt.year.astype(str)
+    #for index in transformed_cluster_summary_df.index:
+    #    if index != 'first_commit_date':
+    #        transformed_cluster_summary_df.loc[index] = transformed_cluster_summary_df.loc[index].astype(int)
 
-    st.dataframe(
-        transformed_cluster_summary_df,
-        column_order=['3', '0', '2', '1'],
-        column_config={
-            '0': st.column_config.Column(label='Steady Builders', width=150),
-            '1': st.column_config.Column(label='High-Traffic Ecosystems', width=150),
-            '2': st.column_config.Column(label='Established Pillars', width=150),
-            '3': st.column_config.Column(label='Emerging Pioneers', width=150),
-        }
-    )
+    #st.dataframe(
+    #    transformed_cluster_summary_df,
+    #    #column_order=['3', '0', '2', '1','4'],
+    #    column_config={
+    #        '0': st.column_config.Column(label='Early-Stage Projects', width=150),
+    #        '1': st.column_config.Column(label='High-Engagement Projects', width=150),
+    #        '2': st.column_config.Column(label='Niche Growing Projects', width=150),
+    #        '3': st.column_config.Column(label='Actively Evolving Projects', width=150),
+    #        '4': st.column_config.Column(label='Mature Ecosystem Leaders', width=150),
+    #    }
+    #)
