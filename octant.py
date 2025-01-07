@@ -83,6 +83,9 @@ summary_container.markdown("""
                             - **Unlock Opportunities**: Learn how impactful ecosystems are evolving and thriving.
                             """)
 
+summary_container.markdown("""
+                            It’s important to note that developer activity is an input metric rather than the desired impact outcome; however, it offers valuable context for understanding engagement and sustainability. Metrics like the number of active developers, the percentage of projects maintaining or increasing activity, and long-term growth trends illustrate Octant’s role in fostering a thriving ecosystem of public goods.
+                            """)
 
 # Create tabs for different sections of the analysis
 tab1, tab2, tab3, tab4 = st.tabs(["Project Trends", "Analysis across Epochs", "Top Projects by Epoch", "Strategic Findings"])
