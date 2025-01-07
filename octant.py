@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 
 # Set page title
 st.title('Octant Grant Analytics 2024')
-st.caption('Powered by OSO, Last updated: 06-Jan-2025')
+st.caption('Powered by OSO, Last updated: 07-Jan-2025')
 
 # Read CSV files from data folder
 try:
