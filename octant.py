@@ -93,6 +93,8 @@ tab1, tab2, tab3, tab4 = st.tabs(["Project Trends", "Analysis across Epochs", "T
 with tab2:
     st.markdown("#### Analyzing Developer Productivity and Funding Distribution Across Epochs")
     st.markdown("Explore how project productivity, measured as event contributions per active developer, correlates with funding received across various epochs. This interactive scatter plot highlights differences in developer team sizes and their impact on funding efficiency.")
+    st.markdown("""This section explores the question, **does funding correlate with developer productivity?** The analysis reveals that funding correlates only slightly with developer productivity, and this relationship is most evident in smaller teams. While higher funding can enhance contributions for small teams, the effect diminishes for medium and larger teams, where scaling often introduces complexities.
+    """)
 
     # Initialize an empty list to store DataFrames 
     epoch_dataframes = [] # Code metrics based on project participation in funding epochs
