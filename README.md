@@ -10,6 +10,7 @@ The analysis spans four key areas:
 - Strategic Insights Through Clustering
 
 **View application:** https://octant-epoch-analysis.streamlit.app
+
 **Read article:** https://docs.opensource.observer/blog/octant-2024-grant-analytics/
 
 <img width="766" alt="Screenshot 2025-07-08 at 2 56 52 PM" src="https://github.com/user-attachments/assets/50b102a0-d8c5-4ff4-b7e6-33f009cb81fa" />
