@@ -12,4 +12,6 @@ The analysis spans four key areas:
 **View application:** https://octant-epoch-analysis.streamlit.app
 **Read article:** https://docs.opensource.observer/blog/octant-2024-grant-analytics/
 
+<img width="766" alt="Screenshot 2025-07-08 at 2 56 52 PM" src="https://github.com/user-attachments/assets/50b102a0-d8c5-4ff4-b7e6-33f009cb81fa" />
 
+<img width="784" alt="Screenshot 2025-07-08 at 2 57 26 PM" src="https://github.com/user-attachments/assets/3593379b-a6f2-45f8-969d-83c1efd4d1ad" />
